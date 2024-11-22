@@ -23,18 +23,20 @@ async def track_email(request: Request, email: str = Query(...), redirect_url: s
     current_time = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')
     time_list = [current_time]
 
+    # Determine the action based on the presence of a redirect URL
+    action = "Link Clicked" if redirect_url else "Email Opened"
+
     # Log the tracking event with the receiver's email
     log_message = (
-        f"Email opened: ID={unique_id}, IP={request.client.host}, "
+        f"{action}: ID={unique_id}, IP={request.client.host}, "
         f"Time={time_list}, Email={email}, Headers={request.headers}"
     )
     print(log_message)  # Log the event to the terminal
-
-    # Return a 1x1 transparent pixel
-    pixel_byte_string, mime_type = pytracking.get_open_tracking_pixel()
 
     # If a redirect URL is provided, redirect the user to that URL
     if redirect_url:
         return RedirectResponse(url=redirect_url)
 
+    # Return a 1x1 transparent pixel
+    pixel_byte_string, mime_type = pytracking.get_open_tracking_pixel()
     return Response(content=pixel_byte_string, media_type=mime_type)
