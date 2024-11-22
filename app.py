@@ -1,10 +1,9 @@
-from fastapi import FastAPI, Request
-from fastapi.responses import Response
+from fastapi import FastAPI, Request, Query
+from fastapi.responses import Response, RedirectResponse
 import pytracking
-import io
 from datetime import datetime
 import uuid
-from fastapi import Query
+import time
 
 app = FastAPI()
 
@@ -35,3 +34,26 @@ async def track_email(request: Request, email: str = Query(...)):
     # Return a 1x1 transparent pixel
     pixel_byte_string, mime_type = pytracking.get_open_tracking_pixel()
     return Response(content=pixel_byte_string, media_type=mime_type)
+
+@app.get("/clicktrack")
+async def clicktrack(request: Request, email: str = Query(...), redirect_url: str = Query(...)):
+    # Generate a unique ID for each click tracking
+    unique_id = str(uuid.uuid4())
+
+    # Log the click tracking event with the receiver's email
+    current_time = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')
+    log_message = (
+        f"Click tracked: ID={unique_id}, IP={request.client.host}, "
+        f"Time={current_time}, Email={email}, Redirect URL={redirect_url}, Headers={request.headers}"
+    )
+    print(log_message)  # Log the click tracking event
+
+    # Redirect to the /track route first to serve the tracking image (with email)
+    track_url = f"/track?email={email}"
+    
+    # Add a small delay before redirecting to the specified URL
+    time.sleep(0.01)  # Sleep for 0.01 seconds
+
+    # Redirect to the original URL
+    return RedirectResponse(url=track_url, status_code=303)
+
