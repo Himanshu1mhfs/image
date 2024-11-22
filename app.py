@@ -51,8 +51,7 @@ async def clicktrack(request: Request, email: str = Query(...), redirect_url: st
     # Redirect to the /track route first to serve the tracking image (with email)
     track_url = f"/track?email={email}"
     
-    # Add a small delay before redirecting to the specified URL
-    time.sleep(0.01)  # Sleep for 0.01 seconds
+
 
     # Redirect to the original URL
     return RedirectResponse(url=track_url, status_code=303)
