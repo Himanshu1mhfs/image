@@ -1,42 +1,74 @@
-from fastapi import FastAPI, Request, Query
-from fastapi.responses import Response, RedirectResponse
-import pytracking
-from datetime import datetime
-import uuid
+from fastapi import FastAPI, Request, HTTPException
+from pydantic import BaseModel
+import requests
 
 app = FastAPI()
 
-@app.get("/")
-async def home():
-    return {"message": "Welcome to the email tracking server!"}
+# Replace with your WhatsApp Business API credentials
+WHATSAPP_API_URL = "https://graph.facebook.com/v13.0/your_phone_number_id/messages"
+WHATSAPP_API_TOKEN = "your_whatsapp_api_token"
 
-@app.get("/favicon.ico")
-async def favicon():
-    return Response(status_code=204)
+# Replace with your LLM API endpoint and token
+LLM_API_URL = "https://api.yourllmprovider.com/v1/completions"
+LLM_API_TOKEN = "your_llm_api_token"
 
-@app.get("/track")
-async def track_email(request: Request, email: str = Query(...), redirect_url: str = Query(None)):
-    # Generate a unique ID for each request
-    unique_id = str(uuid.uuid4())
+# Webhook verification token
+VERIFY_TOKEN = "your_verify_token"
 
-    # Capture the current timestamp and store it as a list
-    current_time = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')
-    time_list = [current_time]
+class WebhookRequest(BaseModel):
+    entry: list
 
-    # Determine the action based on the presence of a redirect URL
-    action = "Link Clicked" if redirect_url else "Email Opened"
+@app.get('/webhook')
+async def verify_webhook(hub_mode: str, hub_challenge: str, hub_verify_token: str):
+    if hub_mode == 'subscribe' and hub_verify_token == VERIFY_TOKEN:
+        return hub_challenge
+    else:
+        raise HTTPException(status_code=403, detail="Verification token mismatch")
 
-    # Log the tracking event with the receiver's email
-    log_message = (
-        f"{action}: ID={unique_id}, IP={request.client.host}, "
-        f"Time={time_list}, Email={email}, Headers={request.headers}"
-    )
-    print(log_message)  # Log the event to the terminal
+@app.post('/webhook')
+async def handle_webhook(request: WebhookRequest):
+    data = await request.json()
+    message = data['entry'][0]['changes'][0]['value']['messages'][0]['text']['body']
+    sender = data['entry'][0]['changes'][0]['value']['contacts'][0]['wa_id']
 
-    # If a redirect URL is provided, redirect the user to that URL
-    if redirect_url:
-        return RedirectResponse(url=redirect_url)
+    # Generate response using LLM
+    response = generate_response(message)
 
-    # Return a 1x1 transparent pixel
-    pixel_byte_string, mime_type = pytracking.get_open_tracking_pixel()
-    return Response(content=pixel_byte_string, media_type=mime_type)
+    # Send response back to user
+    send_message(sender, response)
+
+    return {"status": "success"}
+
+def generate_response(message: str) -> str:
+    headers = {
+        'Authorization': f'Bearer {LLM_API_TOKEN}',
+        'Content-Type': 'application/json'
+    }
+    payload = {
+        'model': 'your_model_name',
+        'prompt': message,
+        'max_tokens': 150
+    }
+    response = requests.post(LLM_API_URL, headers=headers, json=payload)
+    response_json = response.json()
+    return response_json['choices'][0]['text'].strip()
+
+def send_message(phone_number: str, message: str):
+    headers = {
+        'Authorization': f'Bearer {WHATSAPP_API_TOKEN}',
+        'Content-Type': 'application/json'
+    }
+    payload = {
+        'messaging_product': 'whatsapp',
+        'recipient_type': 'individual',
+        'to': phone_number,
+        'type': 'text',
+        'text': {
+            'body': message
+        }
+    }
+    response = requests.post(WHATSAPP_API_URL, headers=headers, json=payload)
+    return response.json()
+
+
+
