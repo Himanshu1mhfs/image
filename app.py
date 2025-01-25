@@ -7,7 +7,7 @@ import os
 from pydantic import BaseModel
 
 # Your app's secret key from the App Dashboard
-APP_SECRET = "EAAMlYUQ59ZBMBO8eJpZBh3LP31eTpGO1ZAJ2UYNeas5XSLkytF4hfOF8zFZC5kAMlAreHO8PFyKparRNTQOG9doVRs9HYZCVuYrfrGD42MQ7LxRZBsrkAvZCDs1a5t7nW3e6baygy0WDbWTmEM1kR7SToa5NN4brqXWFl1phMeJfgW8wvG9lHzTF1I2iuBMWJxMdZCLryZAifXrVbUG1ZCfhkcgraFhIkZD"
+APP_SECRET = "2105b4996a04f3d70781a8173290056d"
 VERIFY_TOKEN = "meatyhamhock"  # The verify token you set in the App Dashboard
 
 app = FastAPI()
