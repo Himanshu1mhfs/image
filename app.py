@@ -8,7 +8,7 @@ app = FastAPI()
 VERIFICATION_TOKEN = "my_secure_verification_token_12345"
 
 # Route to handle WhatsApp Webhook verification and incoming messages
-@app.get("/webhook")
+@app.get("/")
 async def verify_webhook(hub_mode: str, hub_challenge: str, hub_verify_token: str):
     """
     Verifies the webhook during setup.
