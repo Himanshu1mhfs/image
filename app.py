@@ -20,7 +20,7 @@ app = FastAPI()
 @app.get("/webhooks")
 async def verify_webhook(
     hub_mode: str, 
-    hub_challenge: int = Query(...),  # Force the hub_challenge to be an integer
+    hub_challenge: int,  # Force the hub_challenge to be an integer
     hub_verify_token: str
 ):
     if hub_verify_token != VERIFY_TOKEN:
