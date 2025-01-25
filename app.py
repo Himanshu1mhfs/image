@@ -1,74 +1,66 @@
 from fastapi import FastAPI, Request, HTTPException
-from pydantic import BaseModel
-import requests
+import hmac
+import hashlib
 
 app = FastAPI()
 
-# Replace with your WhatsApp Business API credentials
-WHATSAPP_API_URL = "https://graph.facebook.com/v13.0/your_phone_number_id/messages"
-WHATSAPP_API_TOKEN = "EAAMlYUQ59ZBMBOZBWbJNAIp2gZCT7mp4pcGM9tHFATfpEGYZCZCxZAY3MPIjy9jyfAOZCGIMRugYcjjERRZCDudZAwc04a1ZAtVDmNwSQdP1HdGQKO4QHtnGN6hkZAmFMlig2lc2ZC1bbT8ZAbY0666Vfxl3Qw94ebjoYEEkZBCcESDkhDMdUjzhvX901zZAAELPAcfQQFP87L01GP4c2i5ZBMuZAMnKdYc4YktsZD"
+# Replace with your webhook verification token
+VERIFICATION_TOKEN = "my_secure_verification_token_12345"
 
-# Replace with your LLM API endpoint and token
-LLM_API_URL = "https://api.yourllmprovider.com/v1/completions"
-LLM_API_TOKEN = "your_llm_api_token"
-
-# Webhook verification token
-VERIFY_TOKEN = "12345"
-
-class WebhookRequest(BaseModel):
-    entry: list
-
-@app.get('/webhook')
+# Route to handle WhatsApp Webhook verification and incoming messages
+@app.get("/webhook")
 async def verify_webhook(hub_mode: str, hub_challenge: str, hub_verify_token: str):
-    if hub_mode == 'subscribe' and hub_verify_token == VERIFY_TOKEN:
-        return hub_challenge
-    else:
-        raise HTTPException(status_code=403, detail="Verification token mismatch")
+    """
+    Verifies the webhook during setup.
+    WhatsApp sends a GET request with these parameters.
+    """
+    if hub_mode == "subscribe" and hub_verify_token == VERIFICATION_TOKEN:
+        return int(hub_challenge)  # Return the challenge to verify
+    raise HTTPException(status_code=403, detail="Verification failed")
 
-@app.post('/webhook')
-async def handle_webhook(request: WebhookRequest):
-    data = await request.json()
-    message = data['entry'][0]['changes'][0]['value']['messages'][0]['text']['body']
-    sender = data['entry'][0]['changes'][0]['value']['contacts'][0]['wa_id']
+@app.post("/webhook")
+async def receive_message(request: Request):
+    """
+    Handles incoming messages from WhatsApp.
+    """
+    try:
+        # Get the request body as JSON
+        body = await request.json()
 
-    # Generate response using LLM
-    response = generate_response(message)
+        # (Optional) Verify the request using a signature (if provided by WhatsApp)
+        signature = request.headers.get("X-Hub-Signature-256")
+        if signature:
+            verify_signature(request.body, signature)
 
-    # Send response back to user
-    send_message(sender, response)
+        # Process the incoming message
+        # Here, extract details like sender, message text, etc.
+        message = body.get("entry", [])[0].get("changes", [])[0].get("value", {}).get("messages", [])[0]
 
-    return {"status": "success"}
+        if message:
+            sender = message["from"]
+            text = message["text"]["body"]
+            print(f"Message from {sender}: {text}")
 
-def generate_response(message: str) -> str:
-    headers = {
-        'Authorization': f'Bearer {LLM_API_TOKEN}',
-        'Content-Type': 'application/json'
-    }
-    payload = {
-        'model': 'your_model_name',
-        'prompt': message,
-        'max_tokens': 150
-    }
-    response = requests.post(LLM_API_URL, headers=headers, json=payload)
-    response_json = response.json()
-    return response_json['choices'][0]['text'].strip()
+        return {"status": "Message received"}
 
-def send_message(phone_number: str, message: str):
-    headers = {
-        'Authorization': f'Bearer {WHATSAPP_API_TOKEN}',
-        'Content-Type': 'application/json'
-    }
-    payload = {
-        'messaging_product': 'whatsapp',
-        'recipient_type': 'individual',
-        'to': phone_number,
-        'type': 'text',
-        'text': {
-            'body': message
-        }
-    }
-    response = requests.post(WHATSAPP_API_URL, headers=headers, json=payload)
-    return response.json()
+    except Exception as e:
+        print(f"Error processing message: {e}")
+        raise HTTPException(status_code=400, detail="Invalid request format")
 
 
+def verify_signature(request_body, signature):
+    """
+    Verifies the request signature using your app's secret.
+    """
+    app_secret = "EAAMlYUQ59ZBMBO8eJpZBh3LP31eTpGO1ZAJ2UYNeas5XSLkytF4hfOF8zFZC5kAMlAreHO8PFyKparRNTQOG9doVRs9HYZCVuYrfrGD42MQ7LxRZBsrkAvZCDs1a5t7nW3e6baygy0WDbWTmEM1kR7SToa5NN4brqXWFl1phMeJfgW8wvG9lHzTF1I2iuBMWJxMdZCLryZAifXrVbUG1ZCfhkcgraFhIkZD"  # Replace with your App Secret
+    expected_signature = hmac.new(
+        app_secret.encode(),
+        request_body,
+        hashlib.sha256
+    ).hexdigest()
 
+    if not hmac.compare_digest(expected_signature, signature.split("=")[-1]):
+        raise HTTPException(status_code=403, detail="Invalid signature")
+
+
+# Run the app using `uvicorn filename:app --reload`
