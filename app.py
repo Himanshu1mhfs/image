@@ -1,5 +1,5 @@
 from fastapi import FastAPI, HTTPException, Query
-
+import requests
 app = FastAPI()
 
 # Replace with your verification token
