@@ -30,7 +30,7 @@ class WebhookNotification(BaseModel):
     entry: list
     object: str
 
-@app.get("/")
+@app.get("/webhooks")
 async def verify_webhook(hub_mode: str, hub_challenge: str, hub_verify_token: str):
     """
     Webhook verification endpoint. Respond to the verification request from the platform.
@@ -40,7 +40,7 @@ async def verify_webhook(hub_mode: str, hub_challenge: str, hub_verify_token: st
 
     return JSONResponse(content={"hub.challenge": hub_challenge})
 
-@app.post("/")
+@app.post("/webhooks")
 async def handle_event_notification(request: Request):
     """
     Handle incoming event notifications (e.g., changes to user photos).
