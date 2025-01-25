@@ -17,16 +17,22 @@ app = FastAPI()
 #     entry: list
 #     object: str
 
-@app.get("/webhooks")
+@app.get("/webhook")
 async def verify_webhook(
-    hub_mode: str, 
-    hub_challenge: int,  # Force the hub_challenge to be an integer
-    hub_verify_token: str
+    hub_mode: str = Query(..., alias="hub.mode"),
+    hub_challenge: int = Query(..., alias="hub.challenge"),
+    hub_verify_token: str = Query(..., alias="hub.verify_token")
 ):
+    # Verify the mode is 'subscribe'
+    if hub_mode != "subscribe":
+        raise HTTPException(status_code=403, detail="Invalid hub.mode")
+    
+    # Verify the verify token matches
     if hub_verify_token != VERIFY_TOKEN:
-        raise HTTPException(status_code=400, detail="Invalid verify token")
-
-    return JSONResponse(content={"hub.challenge": hub_challenge})
+        raise HTTPException(status_code=403, detail="Invalid verify token")
+    
+    # Return the challenge if verification is successful
+    return hub_challenge
 
 @app.post("/webhooks")
 async def handle_event_notification(request: Request):
