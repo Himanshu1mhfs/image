@@ -18,9 +18,11 @@ app = FastAPI()
 #     object: str
 
 @app.get("/webhooks")
-async def verify_webhook(hub_mode: str, hub_challenge: int = Query(...), hub_verify_token: str):
-    print(f"Received hub_mode: {hub_mode}, hub_challenge: {hub_challenge}, hub_verify_token: {hub_verify_token}")
-    
+async def verify_webhook(
+    hub_mode: str, 
+    hub_challenge: int = Query(...),  # Force the hub_challenge to be an integer
+    hub_verify_token: str
+):
     if hub_verify_token != VERIFY_TOKEN:
         raise HTTPException(status_code=400, detail="Invalid verify token")
 
