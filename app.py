@@ -8,33 +8,19 @@ from pydantic import BaseModel
 
 # Your app's secret key from the App Dashboard
 APP_SECRET = "2105b4996a04f3d70781a8173290056d"
-VERIFY_TOKEN = "meatyhamhock"  # The verify token you set in the App Dashboard
+VERIFY_TOKEN = "12345"  # The verify token you set in the App Dashboard
 
 app = FastAPI()
 
-# Helper function to validate the payload
-def validate_payload(payload: dict, signature: str) -> bool:
-    # Recreate the SHA256 signature using the payload and your app secret
-    payload_str = json.dumps(payload, separators=(',', ':'))
-    computed_signature = hmac.new(
-        key=APP_SECRET.encode('utf-8'),
-        msg=payload_str.encode('utf-8'),
-        digestmod=hashlib.sha256
-    ).hexdigest()
-
-    # Compare the computed signature with the signature from the header
-    return hmac.compare_digest(computed_signature, signature)
-
-# Model to validate the incoming payload structure
-class WebhookNotification(BaseModel):
-    entry: list
-    object: str
+# # Model to validate the incoming payload structure
+# class WebhookNotification(BaseModel):
+#     entry: list
+#     object: str
 
 @app.get("/webhooks")
-async def verify_webhook(hub_mode: str, hub_challenge: str, hub_verify_token: str):
-    """
-    Webhook verification endpoint. Respond to the verification request from the platform.
-    """
+async def verify_webhook(hub_mode: str, hub_challenge: int = Query(...), hub_verify_token: str):
+    print(f"Received hub_mode: {hub_mode}, hub_challenge: {hub_challenge}, hub_verify_token: {hub_verify_token}")
+    
     if hub_verify_token != VERIFY_TOKEN:
         raise HTTPException(status_code=400, detail="Invalid verify token")
 
