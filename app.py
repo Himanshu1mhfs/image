@@ -1,83 +1,66 @@
-from fastapi import FastAPI, HTTPException, Query, Request
-import hmac
+from fastapi import FastAPI, Request, HTTPException
+from fastapi.responses import JSONResponse
 import hashlib
-import logging
+import hmac
+import json
+import os
+from pydantic import BaseModel
+
+# Your app's secret key from the App Dashboard
+APP_SECRET = "EAAMlYUQ59ZBMBO8eJpZBh3LP31eTpGO1ZAJ2UYNeas5XSLkytF4hfOF8zFZC5kAMlAreHO8PFyKparRNTQOG9doVRs9HYZCVuYrfrGD42MQ7LxRZBsrkAvZCDs1a5t7nW3e6baygy0WDbWTmEM1kR7SToa5NN4brqXWFl1phMeJfgW8wvG9lHzTF1I2iuBMWJxMdZCLryZAifXrVbUG1ZCfhkcgraFhIkZD"
+VERIFY_TOKEN = "meatyhamhock"  # The verify token you set in the App Dashboard
 
 app = FastAPI()
 
-# Replace with your verification token
-VERIFICATION_TOKEN = "my_secure_verification_token_12345"
-APP_SECRET = "EAAMlYUQ59ZBMBO8eJpZBh3LP31eTpGO1ZAJ2UYNeas5XSLkytF4hfOF8zFZC5kAMlAreHO8PFyKparRNTQOG9doVRs9HYZCVuYrfrGD42MQ7LxRZBsrkAvZCDs1a5t7nW3e6baygy0WDbWTmEM1kR7SToa5NN4brqXWFl1phMeJfgW8wvG9lHzTF1I2iuBMWJxMdZCLryZAifXrVbUG1ZCfhkcgraFhIkZD"  # Replace with your App Secret from WhatsApp
+# Helper function to validate the payload
+def validate_payload(payload: dict, signature: str) -> bool:
+    # Recreate the SHA256 signature using the payload and your app secret
+    payload_str = json.dumps(payload, separators=(',', ':'))
+    computed_signature = hmac.new(
+        key=APP_SECRET.encode('utf-8'),
+        msg=payload_str.encode('utf-8'),
+        digestmod=hashlib.sha256
+    ).hexdigest()
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
+    # Compare the computed signature with the signature from the header
+    return hmac.compare_digest(computed_signature, signature)
+
+# Model to validate the incoming payload structure
+class WebhookNotification(BaseModel):
+    entry: list
+    object: str
 
 @app.get("/")
-async def verify_webhook(
-    hub_mode: str = Query(None),
-    hub_challenge: str = Query(None),
-    hub_verify_token: str = Query(None),
-):
+async def verify_webhook(hub_mode: str, hub_challenge: str, hub_verify_token: str):
     """
-    Verifies the webhook during setup.
+    Webhook verification endpoint. Respond to the verification request from the platform.
     """
-    logging.info(
-        f"Received verification request: mode={hub_mode}, challenge={hub_challenge}, token={hub_verify_token}"
-    )
+    if hub_verify_token != VERIFY_TOKEN:
+        raise HTTPException(status_code=400, detail="Invalid verify token")
+
+    return JSONResponse(content={"hub.challenge": hub_challenge})
+
+@app.post("/")
+async def handle_event_notification(request: Request):
+    """
+    Handle incoming event notifications (e.g., changes to user photos).
+    """
+    # Get the payload from the request body
+    payload = await request.json()
     
-    if hub_mode == "subscribe" and hub_verify_token == VERIFICATION_TOKEN:
-        # Respond with the hub_challenge to complete the verification
-        return int(hub_challenge) if hub_challenge.isdigit() else hub_challenge
-    raise HTTPException(status_code=403, detail="Verification failed")
+    # Get the signature from the headers
+    signature = request.headers.get('X-Hub-Signature-256', '').replace('sha256=', '')
 
+    # Validate the payload
+    if not validate_payload(payload, signature):
+        raise HTTPException(status_code=400, detail="Invalid payload signature")
 
-@app.post("/webhook")
-async def receive_message(request: Request):
-    """
-    Handles incoming messages from WhatsApp.
-    """
-    try:
-        # Get the request body as JSON
-        body = await request.body()
-        json_body = await request.json()
+    # Process the payload (e.g., logging, triggering further actions)
+    # Here, we just print it for demonstration purposes
+    print(json.dumps(payload, indent=2))
 
-        # (Optional) Verify the request signature if provided by WhatsApp
-        signature = request.headers.get("X-Hub-Signature-256")
-        if signature:
-            verify_signature(body, signature)
+    # Acknowledge the event by responding with HTTP 200 OK
+    return {"status": "success"}
 
-        # Process the incoming message
-        entry = json_body.get("entry", [])[0]
-        changes = entry.get("changes", [])[0]
-        value = changes.get("value", {})
-        message = value.get("messages", [])[0]
-
-        if message:
-            sender = message["from"]
-            text = message["text"]["body"]
-            logging.info(f"Message received from {sender}: {text}")
-        else:
-            logging.warning("No message found in the webhook payload.")
-
-        return {"status": "Message received"}
-    except Exception as e:
-        logging.error(f"Error processing message: {e}")
-        raise HTTPException(status_code=400, detail="Invalid request format")
-
-
-def verify_signature(request_body: bytes, signature: str):
-    """
-    Verifies the request signature using your app's secret.
-    """
-    try:
-        expected_signature = hmac.new(
-            APP_SECRET.encode(),
-            request_body,
-            hashlib.sha256
-        ).hexdigest()
-
-        if not hmac.compare_digest(expected_signature, signature.split("=")[-1]):
-            raise HTTPException(status_code=403, detail="Invalid signature")
-    except Exception as e:
-        logging.error(f"Signature verification failed: {e}")
-        raise HTTPException(status_code=403, detail="Signature verification error")
+# Example: To run the app, use the command:
+# uvicorn main:app --reload
