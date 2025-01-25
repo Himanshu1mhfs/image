@@ -1,21 +1,21 @@
-from fastapi import FastAPI, Request, HTTPException
-import hmac
-import hashlib
+from fastapi import FastAPI, HTTPException, Query
 
 app = FastAPI()
 
-# Replace with your webhook verification token
+# Replace with your verification token
 VERIFICATION_TOKEN = "my_secure_verification_token_12345"
 
-# Route to handle WhatsApp Webhook verification and incoming messages
 @app.get("/")
-async def verify_webhook(hub_mode: str, hub_challenge: str, hub_verify_token: str):
+async def verify_webhook(
+    hub_mode: str = Query(...), 
+    hub_challenge: str = Query(...), 
+    hub_verify_token: str = Query(...)
+):
     """
     Verifies the webhook during setup.
-    WhatsApp sends a GET request with these parameters.
     """
     if hub_mode == "subscribe" and hub_verify_token == VERIFICATION_TOKEN:
-        return int(hub_challenge)  # Return the challenge to verify
+        return int(hub_challenge)  # Respond with the challenge to complete verification
     raise HTTPException(status_code=403, detail="Verification failed")
 
 @app.post("/webhook")
