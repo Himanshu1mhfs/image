@@ -48,7 +48,7 @@ def receive_message():
 
   
                         # Optional: Auto-reply to the message
-                        send_whatsapp_message(sender_id, messages)
+                        send_whatsapp_message(sender_id, chat_response)
 
     return jsonify({"status": "success"}), 200  # Respond to WhatsApp API
 
