@@ -42,7 +42,7 @@ def receive_message():
 
 def send_whatsapp_message(phone_number, message):
     """Send a WhatsApp message using Meta API."""
-    url = "https://graph.facebook.com/v18.0/YOUR_PHONE_NUMBER_ID/messages"
+    url = "https://graph.facebook.com/v18.0/499067449964433/messages"
     headers = {
         "Authorization": f"Bearer {ACCESS_TOKEN}",
         "Content-Type": "application/json"
