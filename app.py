@@ -1,6 +1,9 @@
 import os
 import requests
 from flask import Flask, request, jsonify
+from mistralai import Mistral
+api_key = "ikSxiFOa62gk856aw8wDLpBNU7BLegyU"
+model = "open-mistral-7b"
 
 app = Flask(__name__)
 
@@ -34,9 +37,18 @@ def receive_message():
                         message_text = message.get("text", {}).get("body", "")
 
                         print(f"New message from {sender_id}: {message_text}")
+                        client = Mistral(api_key=api_key)
+                        chat_response = client.chat.complete(
+                            model=model,
+                            messages=[
+                                {"role": "system", "content": "You are Gunoo, a friendly chatbot that provides helpful and engaging information."},
+                                {"role": "user", "content":message_text}
+                            ]
+                        )
 
+  
                         # Optional: Auto-reply to the message
-                        send_whatsapp_message(sender_id, "Hello! This is an automated response.")
+                        send_whatsapp_message(sender_id, messages)
 
     return jsonify({"status": "success"}), 200  # Respond to WhatsApp API
 
