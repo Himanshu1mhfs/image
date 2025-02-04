@@ -1,60 +1,108 @@
-from fastapi import FastAPI, Request, HTTPException,Query
-from fastapi.responses import JSONResponse
-import hashlib
-import hmac
+# Install required packages
+# pip install flask requests
+
+from flask import Flask, request, jsonify
+import requests
 import json
-import os
-from pydantic import BaseModel
 
-# Your app's secret key from the App Dashboard
-APP_SECRET = "2105b4996a04f3d70781a8173290056d"
-VERIFY_TOKEN = "12345"  # The verify token you set in the App Dashboard
+app = Flask(__name__)
 
-app = FastAPI()
+# Configuration (Replace with your credentials)
+VERIFY_TOKEN = "12345"  # Set in WhatsApp Business API settings
+ACCESS_TOKEN = "YOUR_ACCESS_TOKEN"  # From Facebook Developer Portal
+API_VERSION = "v18.0"
+PHONE_NUMBER_ID = "YOUR_PHONE_NUMBER_ID"
 
-# # Model to validate the incoming payload structure
-# class WebhookNotification(BaseModel):
-#     entry: list
-#     object: str
-
-@app.get("/webhook")
-async def verify_webhook(
-    hub_mode: str = Query(..., alias="hub.mode"),
-    hub_challenge: int = Query(..., alias="hub.challenge"),
-    hub_verify_token: str = Query(..., alias="hub.verify_token")
-):
-    # Verify the mode is 'subscribe'
-    if hub_mode != "subscribe":
-        raise HTTPException(status_code=403, detail="Invalid hub.mode")
-    
-    # Verify the verify token matches
-    if hub_verify_token != VERIFY_TOKEN:
-        raise HTTPException(status_code=403, detail="Invalid verify token")
-    
-    # Return the challenge if verification is successful
-    return hub_challenge
-
-@app.post("/webhooks")
-async def handle_event_notification(request: Request):
+# Verification endpoint (GET)
+@app.route('/webhook', methods=['GET'])
+def verify_webhook():
     """
-    Handle incoming event notifications (e.g., changes to user photos).
+    WhatsApp will send a GET request to verify the webhook
     """
-    # Get the payload from the request body
-    payload = await request.json()
+    mode = request.args.get('hub.mode')
+    token = request.args.get('hub.verify_token')
+    challenge = request.args.get('hub.challenge')
+
+    if mode and token:
+        if mode == 'subscribe' and token == VERIFY_TOKEN:
+            print("WEBHOOK VERIFIED")
+            return challenge, 200
+        else:
+            return "Verification failed", 403
+    return "Missing parameters", 400
+
+# Main webhook endpoint (POST)
+@app.route('/webhook', methods=['POST'])
+def handle_webhook():
+    """
+    Handle incoming messages and events
+    """
+    data = request.get_json()
+    print("Received webhook data:", json.dumps(data, indent=2))
+
+    # Check if it's a message
+    if 'object' in data and 'entry' in data:
+        if data['object'] == 'whatsapp_business_account':
+            try:
+                for entry in data['entry']:
+                    for change in entry.get('changes', []):
+                        value = change.get('value')
+                        if 'messages' in value:
+                            message = value['messages'][0]
+                            handle_message(message)
+            except Exception as e:
+                print(f"Error processing message: {str(e)}")
+                return jsonify({'status': 'error'}), 500
+
+    return jsonify({'status': 'success'}), 200
+
+def handle_message(message):
+    """
+    Process individual messages
+    """
+    message_type = message['type']
+    from_number = message['from']
+    message_id = message['id']
     
-    # Get the signature from the headers
-    signature = request.headers.get('X-Hub-Signature-256', '').replace('sha256=', '')
+    print(f"New {message_type} message from {from_number}")
+    
+    # Handle different message types
+    if message_type == 'text':
+        text_body = message['text']['body']
+        print(f"Message content: {text_body}")
+        send_reply(from_number, f"You said: {text_body}")
+    elif message_type == 'image':
+        image = message['image']
+        # Handle image message
+    elif message_type == 'document':
+        document = message['document']
+        # Handle document message
+    # Add other message types as needed
 
-    # Validate the payload
-    if not validate_payload(payload, signature):
-        raise HTTPException(status_code=400, detail="Invalid payload signature")
+def send_reply(to_number, message_text):
+    """
+    Send reply through WhatsApp API
+    """
+    url = f"https://graph.facebook.com/{API_VERSION}/{PHONE_NUMBER_ID}/messages"
+    headers = {
+        'Authorization': f'Bearer {ACCESS_TOKEN}',
+        'Content-Type': 'application/json'
+    }
+    payload = {
+        "messaging_product": "whatsapp",
+        "recipient_type": "individual",
+        "to": to_number,
+        "type": "text",
+        "text": {
+            "body": message_text
+        }
+    }
+    
+    response = requests.post(url, json=payload, headers=headers)
+    if response.status_code == 200:
+        print("Message sent successfully")
+    else:
+        print(f"Failed to send message: {response.text}")
 
-    # Process the payload (e.g., logging, triggering further actions)
-    # Here, we just print it for demonstration purposes
-    print(json.dumps(payload, indent=2))
-
-    # Acknowledge the event by responding with HTTP 200 OK
-    return {"status": "success"}
-
-# Example: To run the app, use the command:
-# uvicorn main:app --reload
+if __name__ == '__main__':
+    app.run(port=5000, debug=True)
