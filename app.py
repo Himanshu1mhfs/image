@@ -69,5 +69,5 @@ def send_whatsapp_message(phone_number, message):
     print("WhatsApp API Response:", response.json())  # Log API response
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    app.run(debug=True)
 
