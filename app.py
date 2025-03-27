@@ -49,7 +49,7 @@ def receive_message():
                             # Send Portfolio Link Message
                             send_whatsapp_message(sender_id, "https://inv.moneyhoney.co.in/#/investor-login")
                         else:
-                            send_whatsapp_message(sender_id, "Hii")
+                            send_whatsapp_message(sender_id, "https://inv.moneyhoney.co.in/#/investor-login")
 
     return jsonify({"status": "success"}), 200  # Respond to WhatsApp API
 
