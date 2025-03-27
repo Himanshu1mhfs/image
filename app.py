@@ -8,7 +8,7 @@ model = "open-mistral-7b"
 app = Flask(__name__)
 
 VERIFY_TOKEN = "12345"
-ACCESS_TOKEN = "EAASZCiWzUovMBO1lF1FxQXBW8CoUUJZA5h0rn9XOhLYc6X2vFyQG4I6bf6JO9LuVALD0Xq02H8uJ3aQZAYy1qO1i4LqcSdhbZCEZCI3YvswZBZC2PZCicF0Vsh87ODjbkDz7GzN0NKTeZCkX5i53F1PL8rXrgBRqUwUDjlp9huxVO15OzEZA4liPSlOSgVPEBLXv8rEPYPHJzD1crlFFi7fFiet28X"  # Store in environment variable
+ACCESS_TOKEN = "EAASZCiWzUovMBO2qZA7BqHtRlmpgcU4moO1sqZCJHSgyYbzBFkCiJdSA7kNItB1dvSRHlUQMrQIsyk7VGcorIWSnKSgqkAKAHY7pKFG8FedD1wNqrHzehXOW1LimY672FDXjcX7aUWRwn5eck6t2ZCNHpdUShqX81MQ48dLV0dcyvrGp3XlZBnXwkqgFLz5ZC6Y4bZCDpFVO9Q8tycZD"  # Store in environment variable
 
 @app.route("/", methods=["GET"])
 def webhook_verify():
@@ -54,7 +54,7 @@ def receive_message():
 
 def send_whatsapp_message(phone_number, message):
     """Send a WhatsApp message using Meta API."""
-    url = "https://graph.facebook.com/v18.0/499067449964433/messages"
+    url = "https://graph.facebook.com/v18.0/559338400603685/messages"
     headers = {
         "Authorization": f"Bearer {ACCESS_TOKEN}",
         "Content-Type": "application/json"
