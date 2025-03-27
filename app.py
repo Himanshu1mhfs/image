@@ -49,17 +49,8 @@ def receive_message():
                             # Send Portfolio Link Template Message
                             send_whatsapp_message(sender_id, "https://inv.moneyhoney.co.in/#/investor-login")
                         else:
-                            # Use Mistral AI to generate a response
-                            client = Mistral(api_key=api_key)
-                            chat_response = client.chat.complete(
-                                model=model,
-                                messages=[
-                                    {"role": "system", "content": "You are MHFS, a friendly chatbot that provides helpful and engaging information."},
-                                    {"role": "user", "content": message_text}
-                                ]
-                            )
-                            response_text = chat_response.content  # Ensure correct extraction
-                            send_whatsapp_message(sender_id, response_text)
+                            # Use Mistral AI to generate a respons
+                            send_whatsapp_message(sender_id, "Hii")
 
     return jsonify({"status": "success"}), 200  # Respond to WhatsApp API
 
