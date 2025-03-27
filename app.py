@@ -38,24 +38,23 @@ def receive_message():
                 if "value" in change and "messages" in change["value"]:
                     for message in change["value"]["messages"]:
                         sender_id = message["from"]  # Sender's WhatsApp number
-                        message_text = message.get("text", {}).get("body", "").strip().lower()
+                        message_text = message.get("text", {}).get("body", "").strip()
 
                         print(f"New message from {sender_id}: {message_text}")
 
-                        if message_text in ["hi", "hii", "hello","Hi","Hii"]:
+                        if message_text in ["Hi", "Hii", "Hello"]:
                             # Send a greeting template message
-                            send_template_message(sender_id, "greeting_template")
-                        if message_text == "Portfolio Report":
-                            # Send Portfolio Link Template Message
+                            send_template_message(sender_id)
+                        elif message_text == "Portfolio Report":
+                            # Send Portfolio Link Message
                             send_whatsapp_message(sender_id, "https://inv.moneyhoney.co.in/#/investor-login")
                         else:
-                            # Use Mistral AI to generate a respons
                             send_whatsapp_message(sender_id, "Hii")
 
     return jsonify({"status": "success"}), 200  # Respond to WhatsApp API
 
 
-def send_template_message(phone_number, template_name):
+def send_template_message(phone_number):
     """Send a WhatsApp template message via Meta API."""
     url = f"https://graph.facebook.com/v18.0/{PHONE_NUMBER_ID}/messages"
     headers = {
@@ -67,7 +66,7 @@ def send_template_message(phone_number, template_name):
         "to": phone_number,
         "type": "template",
         "template": {
-            "name": "portfolio_link1",
+            "name": "portfolio_link1",  # Kept fixed as requested
             "language": {
                 "code": "en"
             }
@@ -75,7 +74,7 @@ def send_template_message(phone_number, template_name):
     }
 
     response = requests.post(url, json=payload, headers=headers)
-    print(f"WhatsApp Template ({template_name}) API Response:", response.json())  # Log API response
+    print("WhatsApp Template API Response:", response.json())  # Log API response
 
 
 def send_whatsapp_message(phone_number, message):
