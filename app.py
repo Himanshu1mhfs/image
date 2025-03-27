@@ -3,13 +3,15 @@ import requests
 from flask import Flask, request, jsonify
 from mistralai import Mistral
 
-api_key = "ikSxiFOa62gk856aw8wDLpBNU7BLegyU"  # Store this in an environment variable for security
-model = "open-mistral-7b"
+# Store API keys in environment variables for security
+api_key = os.getenv("MISTRAL_API_KEY", "ikSxiFOa62gk856aw8wDLpBNU7BLegyU")
+ACCESS_TOKEN = os.getenv("WHATSAPP_ACCESS_TOKEN", "EAASZCiWzUovMBO2qZA7BqHtRlmpgcU4moO1sqZCJHSgyYbzBFkCiJdSA7kNItB1dvSRHlUQMrQIsyk7VGcorIWSnKSgqkAKAHY7pKFG8FedD1wNqrHzehXOW1LimY672FDXjcX7aUWRwn5eck6t2ZCNHpdUShqX81MQ48dLV0dcyvrGp3XlZBnXwkqgFLz5ZC6Y4bZCDpFVO9Q8tycZD")
+PHONE_NUMBER_ID = "559338400603685"  # Your WhatsApp Phone Number ID from Meta
 
 app = Flask(__name__)
 
 VERIFY_TOKEN = "12345"
-ACCESS_TOKEN = "EAASZCiWzUovMBO2qZA7BqHtRlmpgcU4moO1sqZCJHSgyYbzBFkCiJdSA7kNItB1dvSRHlUQMrQIsyk7VGcorIWSnKSgqkAKAHY7pKFG8FedD1wNqrHzehXOW1LimY672FDXjcX7aUWRwn5eck6t2ZCNHpdUShqX81MQ48dLV0dcyvrGp3XlZBnXwkqgFLz5ZC6Y4bZCDpFVO9Q8tycZD"  # Store in an environment variable
+model = "open-mistral-7b"
 
 
 @app.route("/", methods=["GET"])
@@ -30,20 +32,24 @@ def receive_message():
     data = request.get_json()
     print("Received webhook data:", data)  # Log the data for debugging
 
-    # Process incoming messages
     if "entry" in data:
         for entry in data["entry"]:
             for change in entry.get("changes", []):
                 if "value" in change and "messages" in change["value"]:
                     for message in change["value"]["messages"]:
                         sender_id = message["from"]  # Sender's WhatsApp number
-                        message_text = message.get("text", {}).get("body", "")
+                        message_text = message.get("text", {}).get("body", "").strip().lower()
 
                         print(f"New message from {sender_id}: {message_text}")
 
-                        if message_text == "Portfolio Report":
-                            text = "https://inv.moneyhoney.co.in/#/investor-login"
+                        if message_text in ["hi", "hii", "hello"]:
+                            # Send a greeting template message
+                            send_template_message(sender_id, "greeting_template")
+                        elif message_text == "portfolio report":
+                            # Send Portfolio Link Template Message
+                            send_template_message(sender_id, "portfolio_link1")
                         else:
+                            # Use Mistral AI to generate a response
                             client = Mistral(api_key=api_key)
                             chat_response = client.chat.complete(
                                 model=model,
@@ -52,17 +58,38 @@ def receive_message():
                                     {"role": "user", "content": message_text}
                                 ]
                             )
-                            text = chat_response.choices[0].message.content
-
-                        # Send a WhatsApp reply
-                        send_whatsapp_message(sender_id, text)
+                            response_text = chat_response.content  # Ensure correct extraction
+                            send_whatsapp_message(sender_id, response_text)
 
     return jsonify({"status": "success"}), 200  # Respond to WhatsApp API
 
 
+def send_template_message(phone_number, template_name):
+    """Send a WhatsApp template message via Meta API."""
+    url = f"https://graph.facebook.com/v18.0/{PHONE_NUMBER_ID}/messages"
+    headers = {
+        "Authorization": f"Bearer {ACCESS_TOKEN}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "messaging_product": "whatsapp",
+        "to": phone_number,
+        "type": "template",
+        "template": {
+            "name": template_name,
+            "language": {
+                "code": "en"
+            }
+        }
+    }
+
+    response = requests.post(url, json=payload, headers=headers)
+    print(f"WhatsApp Template ({template_name}) API Response:", response.json())  # Log API response
+
+
 def send_whatsapp_message(phone_number, message):
-    """Send a WhatsApp message using Meta API."""
-    url = "https://graph.facebook.com/v18.0/559338400603685/messages"
+    """Send a normal WhatsApp text message via Meta API."""
+    url = f"https://graph.facebook.com/v18.0/{PHONE_NUMBER_ID}/messages"
     headers = {
         "Authorization": f"Bearer {ACCESS_TOKEN}",
         "Content-Type": "application/json"
@@ -74,7 +101,7 @@ def send_whatsapp_message(phone_number, message):
     }
 
     response = requests.post(url, json=payload, headers=headers)
-    print("WhatsApp API Response:", response.json())  # Log API response
+    print("WhatsApp Text API Response:", response.json())  # Log API response
 
 
 if __name__ == "__main__":
