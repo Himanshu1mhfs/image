@@ -52,7 +52,7 @@ def receive_message():
                                     {"role": "user", "content": message_text}
                                 ]
                             )
-                            text = chat_response.content  # Fix: Use `chat_response.content`
+                            text = chat_response.choices[0].message.content
 
                         # Send a WhatsApp reply
                         send_whatsapp_message(sender_id, text)
