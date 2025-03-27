@@ -41,7 +41,7 @@ def receive_message():
                         chat_response = client.chat.complete(
                             model=model,
                             messages=[
-                                {"role": "system", "content": "You are Gunoo, a friendly chatbot that provides helpful and engaging information."},
+                                {"role": "system", "content": "You are MHFS, a friendly chatbot that provides helpful and engaging information."},
                                 {"role": "user", "content":message_text}
                             ]
                         )
