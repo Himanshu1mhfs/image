@@ -5,7 +5,7 @@ from mistralai import Mistral
 
 # Store API keys in environment variables for security
 api_key = os.getenv("MISTRAL_API_KEY", "ikSxiFOa62gk856aw8wDLpBNU7BLegyU")
-ACCESS_TOKEN = os.getenv("WHATSAPP_ACCESS_TOKEN", "EAASZCiWzUovMBO2qZA7BqHtRlmpgcU4moO1sqZCJHSgyYbzBFkCiJdSA7kNItB1dvSRHlUQMrQIsyk7VGcorIWSnKSgqkAKAHY7pKFG8FedD1wNqrHzehXOW1LimY672FDXjcX7aUWRwn5eck6t2ZCNHpdUShqX81MQ48dLV0dcyvrGp3XlZBnXwkqgFLz5ZC6Y4bZCDpFVO9Q8tycZD")
+ACCESS_TOKEN = os.getenv("WHATSAPP_ACCESS_TOKEN", "EAASZCiWzUovMBO6Ts1uxbJpLQj8aYx4lZBLhPWIcBI8DH580Bui8cKRvzLyjjwpNhf4qfSUIo7aI5ZAdDykMligEeRxtr7sd4yFo3L53WG1kc1aiQCGMLOi3Nq2hTgapmw4Atp67ZC8ZBi3zHmSX7G8QC1OY7ZA6Pdb1LD6bFMuHoMgMP9znJOeILjuVSx5Pu3tQooMNZAvY8OtYqv5M229bR82")
 PHONE_NUMBER_ID = "559338400603685"  # Your WhatsApp Phone Number ID from Meta
 
 app = Flask(__name__)
