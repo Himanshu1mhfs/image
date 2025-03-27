@@ -45,9 +45,9 @@ def receive_message():
                         if message_text in ["hi", "hii", "hello","Hi","Hii"]:
                             # Send a greeting template message
                             send_template_message(sender_id, "greeting_template")
-                        elif message_text == "portfolio report":
+                        elif message_text == "Portfolio Report":
                             # Send Portfolio Link Template Message
-                            send_template_message(sender_id, "portfolio_link1")
+                            send_whatsapp_message(sender_id, "https://inv.moneyhoney.co.in/#/investor-login")
                         else:
                             # Use Mistral AI to generate a response
                             client = Mistral(api_key=api_key)
