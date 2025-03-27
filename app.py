@@ -8,7 +8,7 @@ model = "open-mistral-7b"
 app = Flask(__name__)
 
 VERIFY_TOKEN = "12345"
-ACCESS_TOKEN = "EAAMlYUQ59ZBMBOykcLV3lf5a5xwgPcxZBT9jiEWwJDmIBvnfK2H0YHOhON9JuA1TTlWXnWxErNuBksu3KP0aNcXeFZB1llg0W6JILslbGkoy59xHqVj2ufi48lXw6C8X8dMSbBZA0HecoFWdeDOhVawN7ZBrGHPZC7bYFFaj3AZCbw3QXpnsSHZA4xXruRL1KmlXynBuzUFSPsxPWC2cnYRNkDqtoJEZD"  # Store in environment variable
+ACCESS_TOKEN = "EAASZCiWzUovMBO9ITFMv9SVVZAJFW4e41fSl51MQS9TOZBRmS19e0ZCHZBST3O3MM5XC2b50WUeNCBuEoaa4QtO9yYFwuN2F7gXwd3H679JCjYRC7zCS3ZASz1tiHDiBhC8TiZA2zwLCj4ZAy3SMWNT23e0zO3ZA7lea0OPZCjajdwuvoIGHMwNHQfGqdWArxG1qQmQaYzRPaoNQbziifTVl31O8LN"  # Store in environment variable
 
 @app.route("/", methods=["GET"])
 def webhook_verify():
