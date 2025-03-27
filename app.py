@@ -2,13 +2,15 @@ import os
 import requests
 from flask import Flask, request, jsonify
 from mistralai import Mistral
-api_key = "ikSxiFOa62gk856aw8wDLpBNU7BLegyU"
+
+api_key = "ikSxiFOa62gk856aw8wDLpBNU7BLegyU"  # Store this in an environment variable for security
 model = "open-mistral-7b"
 
 app = Flask(__name__)
 
 VERIFY_TOKEN = "12345"
-ACCESS_TOKEN = "EAASZCiWzUovMBO2qZA7BqHtRlmpgcU4moO1sqZCJHSgyYbzBFkCiJdSA7kNItB1dvSRHlUQMrQIsyk7VGcorIWSnKSgqkAKAHY7pKFG8FedD1wNqrHzehXOW1LimY672FDXjcX7aUWRwn5eck6t2ZCNHpdUShqX81MQ48dLV0dcyvrGp3XlZBnXwkqgFLz5ZC6Y4bZCDpFVO9Q8tycZD"  # Store in environment variable
+ACCESS_TOKEN = "EAASZCiWzUovMBO2qZA7BqHtRlmpgcU4moO1sqZCJHSgyYbzBFkCiJdSA7kNItB1dvSRHlUQMrQIsyk7VGcorIWSnKSgqkAKAHY7pKFG8FedD1wNqrHzehXOW1LimY672FDXjcX7aUWRwn5eck6t2ZCNHpdUShqX81MQ48dLV0dcyvrGp3XlZBnXwkqgFLz5ZC6Y4bZCDpFVO9Q8tycZD"  # Store in an environment variable
+
 
 @app.route("/", methods=["GET"])
 def webhook_verify():
@@ -20,6 +22,7 @@ def webhook_verify():
     if mode == "subscribe" and token == VERIFY_TOKEN:
         return challenge, 200  # Meta (Facebook) needs this response
     return "Verification failed", 403
+
 
 @app.route("/", methods=["POST"])
 def receive_message():
@@ -37,20 +40,25 @@ def receive_message():
                         message_text = message.get("text", {}).get("body", "")
 
                         print(f"New message from {sender_id}: {message_text}")
-                        # client = Mistral(api_key=api_key)
-                        # chat_response = client.chat.complete(
-                        #     model=model,
-                        #     messages=[
-                        #         {"role": "system", "content": "You are MHFS, a friendly chatbot that provides helpful and engaging information."},
-                        #         {"role": "user", "content":message_text}
-                        #     ]
-                        # )
-                
-  
-                        # Optional: Auto-reply to the message
-                        send_whatsapp_message(sender_id, "Hii")
+
+                        if message_text == "Portfolio Report":
+                            text = "https://inv.moneyhoney.co.in/#/investor-login"
+                        else:
+                            client = Mistral(api_key=api_key)
+                            chat_response = client.chat.complete(
+                                model=model,
+                                messages=[
+                                    {"role": "system", "content": "You are MHFS, a friendly chatbot that provides helpful and engaging information."},
+                                    {"role": "user", "content": message_text}
+                                ]
+                            )
+                            text = chat_response.content  # Fix: Use `chat_response.content`
+
+                        # Send a WhatsApp reply
+                        send_whatsapp_message(sender_id, text)
 
     return jsonify({"status": "success"}), 200  # Respond to WhatsApp API
+
 
 def send_whatsapp_message(phone_number, message):
     """Send a WhatsApp message using Meta API."""
@@ -68,6 +76,6 @@ def send_whatsapp_message(phone_number, message):
     response = requests.post(url, json=payload, headers=headers)
     print("WhatsApp API Response:", response.json())  # Log API response
 
+
 if __name__ == "__main__":
     app.run(debug=True)
-
