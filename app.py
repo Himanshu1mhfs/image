@@ -76,7 +76,7 @@ def send_template_message(phone_number, template_name):
         "to": phone_number,
         "type": "template",
         "template": {
-            "name": portfolio_link1,
+            "name": "portfolio_link1",
             "language": {
                 "code": "en"
             }
