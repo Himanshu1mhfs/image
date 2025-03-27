@@ -42,7 +42,7 @@ def receive_message():
 
                         print(f"New message from {sender_id}: {message_text}")
 
-                        if message_text in ["hi", "hii", "hello"]:
+                        if message_text in ["hi", "hii", "hello","Hi","Hii"]:
                             # Send a greeting template message
                             send_template_message(sender_id, "greeting_template")
                         elif message_text == "portfolio report":
